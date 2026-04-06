@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_USER     = 'shamanth74'
         IMAGE_NAME      = 'java-image'
-        // 'docker-hub-creds' must be created in Jenkins -> Manage Jenkins -> Credentials
+        // Ensure you have created credentials with ID 'docker-hub-creds' in Jenkins
         DOCKER_HUB_AUTH = credentials('docker-hub-creds') 
     }
 
@@ -18,32 +18,33 @@ pipeline {
         stage('Build & Tag') {
             steps {
                 script {
-                    // This tags it with the Jenkins Build Number (v1, v2, v3...)
-                    sh "docker build -t ${DOCKER_USER}/${IMAGE_NAME}:v${BUILD_NUMBER} ."
-                    // Also tags it as 'latest' for convenience
-                    sh "docker build -t ${DOCKER_USER}/${IMAGE_NAME}:latest ."
+                    // Using 'bat' for Windows Command Prompt
+                    bat "docker build -t %DOCKER_USER%/%IMAGE_NAME%:v%BUILD_NUMBER% ."
+                    bat "docker build -t %DOCKER_USER%/%IMAGE_NAME%:latest ."
                 }
             }
         }
 
         stage('Docker Hub Login') {
             steps {
-                // Uses the environment variables provided by 'credentials'
-                sh "echo $DOCKER_HUB_AUTH_PSW | docker login -u $DOCKER_HUB_AUTH_USR --password-stdin"
+                // In Windows 'bat', we use %VAR% instead of $VAR
+                // We use 'echo |' to pipe the password into docker login
+                bat "echo %DOCKER_HUB_AUTH_PSW% | docker login -u %DOCKER_HUB_AUTH_USR% --password-stdin"
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:v${BUILD_NUMBER}"
-                sh "docker push ${DOCKER_USER}/${IMAGE_NAME}:latest"
+                bat "docker push %DOCKER_USER%/%IMAGE_NAME%:v%BUILD_NUMBER%"
+                bat "docker push %DOCKER_USER%/%IMAGE_NAME%:latest"
             }
         }
 
         stage('Clean Local Images') {
             steps {
-                sh "docker rmi ${DOCKER_USER}/${IMAGE_NAME}:v${BUILD_NUMBER}"
-                sh "docker rmi ${DOCKER_USER}/${IMAGE_NAME}:latest"
+                // '|| exit 0' ensures the pipeline doesn't fail if the image was already gone
+                bat "docker rmi %DOCKER_USER%/%IMAGE_NAME%:v%BUILD_NUMBER% || exit 0"
+                bat "docker rmi %DOCKER_USER%/%IMAGE_NAME%:latest || exit 0"
             }
         }
     }
