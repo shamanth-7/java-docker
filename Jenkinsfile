@@ -27,9 +27,8 @@ pipeline {
 
         stage('Docker Hub Login') {
             steps {
-                // In Windows 'bat', we use %VAR% instead of $VAR
-                // We use 'echo |' to pipe the password into docker login
-                bat "echo %DOCKER_HUB_AUTH_PSW% | docker login -u %DOCKER_HUB_AUTH_USR% --password-stdin"
+                // We remove the space before the pipe to avoid sending a space as part of the password
+                bat "@echo %DOCKER_HUB_AUTH_PSW%| docker login -u %DOCKER_HUB_AUTH_USR% --password-stdin"
             }
         }
 
